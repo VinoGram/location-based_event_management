@@ -23,7 +23,7 @@ import CalendarDropdown from './CalendarDropdown';
 import OfflineEventViewer from './OfflineEventViewer';
 import EventLocationMap from './EventLocationMap';
 
-interface Event {
+interface AppEvent {
   id?: string;
   _id: string;
   title: string;
@@ -95,11 +95,11 @@ interface ConvertedPrice {
 
 export default function EventDiscovery({ userLocation, currency }: EventDiscoveryProps) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [forYouEvents, setForYouEvents] = useState<Event[]>([]);
-  const [recommendations, setRecommendations] = useState<Event[]>([]);
-  const [savedEvents, setSavedEvents] = useState<Event[]>([]);
-  const [searchResults, setSearchResults] = useState<Event[]>([]);
+  const [events, setEvents] = useState<AppEvent[]>([]);
+  const [forYouEvents, setForYouEvents] = useState<AppEvent[]>([]);
+  const [recommendations, setRecommendations] = useState<AppEvent[]>([]);
+  const [savedEvents, setSavedEvents] = useState<AppEvent[]>([]);
+  const [searchResults, setSearchResults] = useState<AppEvent[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [userPreferences, setUserPreferences] = useState<any>(null);
@@ -1057,7 +1057,7 @@ function CommentAvatar({ url, name }: { url?: string | null; name: string }) {
 }
 
 function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurrency, convertPrice }: {
-  event: Event;
+  event: AppEvent;
   onRSVP: (eventId: string, status: "going" | "interested") => void;
   onRate: (eventId: string, rating: number) => void;
   onComment: (eventId: string, comment: string) => void;
@@ -1079,7 +1079,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
   });
   const [showGroupOptions, setShowGroupOptions] = useState(false);
   const [showOfflineViewer, setShowOfflineViewer] = useState(false);
-  const [similarEvents, setSimilarEvents] = useState<Event[]>([]);
+  const [similarEvents, setSimilarEvents] = useState<AppEvent[]>([]);
   const [showSimilar, setShowSimilar] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [analyticsData, setAnalyticsData] = useState<{
@@ -1736,7 +1736,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
           {showLocationMap && (
             <div className="mt-1">
               <EventLocationMap
-                event={event as any}
+                event={event}
                 onMapReady={(imageUrl) => setMapImageUrl(imageUrl)}
               />
             </div>
