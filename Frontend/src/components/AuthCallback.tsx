@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 
+declare global { interface Window { gtag?: (...args: any[]) => void; } }
+
 interface AuthCallbackProps {
   onAuthSuccess: (user: any) => void;
 }
@@ -23,6 +25,10 @@ export function AuthCallback({ onAuthSuccess }: AuthCallbackProps) {
       sessionStorage.setItem('token', token);
       sessionStorage.setItem('user', JSON.stringify(user));
       onAuthSuccess(user);
+      // Track Google OAuth sign-in in analytics
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'login', { method: 'Google' });
+      }
       toast.success('Welcome!');
       window.location.href = '/';
     } catch {
@@ -32,10 +38,12 @@ export function AuthCallback({ onAuthSuccess }: AuthCallbackProps) {
   }, [onAuthSuccess]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0a00 50%, #0a0a0a 100%)' }} className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto mb-4"></div>
-        <p className="text-white">Completing authentication...</p>
+        <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg,#FB8B24,#DDAA52)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+        </div>
+        <p className="text-white font-semibold">Completing authentication...</p>
       </div>
     </div>
   );

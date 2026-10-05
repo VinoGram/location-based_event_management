@@ -33,10 +33,12 @@ export default function OAuthCallback({ onAuthSuccess }: OAuthCallbackProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      <div style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0a00 50%, #0a0a0a 100%)' }} className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white">Completing authentication...</p>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg,#FB8B24,#DDAA52)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+          </div>
+          <p className="text-white font-semibold">Completing authentication...</p>
         </div>
       </div>
     );
@@ -44,12 +46,13 @@ export default function OAuthCallback({ onAuthSuccess }: OAuthCallbackProps) {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      <div style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0a00 50%, #0a0a0a 100%)' }} className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-400 mb-4">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.href = '/'}
-            className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600"
+            style={{ background: 'linear-gradient(90deg,#FB8B24,#DDAA52)', color: '#000', fontWeight: 700 }}
+            className="px-6 py-2 rounded-xl"
           >
             Return to Login
           </button>
