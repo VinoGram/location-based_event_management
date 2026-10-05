@@ -3,8 +3,18 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const rateLimit = require('express-rate-limit');
 const { sendWelcomeEmail, sendSignInEmail, sendOTPEmail, sendPasswordResetConfirmationEmail } = require('../services/emailService');
 const router = express.Router();
+
+// Strict rate limit for login — 10 attempts per 15 minutes per IP
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { message: 'Too many login attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Store OTPs temporarily (in production, use Redis or database)
 const otpStore = new Map();
@@ -190,7 +200,7 @@ router.post('/register', async (req, res) => {
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     console.log('Login attempt:', { email });
@@ -199,19 +209,20 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email and password required' });
     }
 
-    // Check for hardcoded admin account
-    if (email === 'euforia.admin.2024@gmail.com' && password === 'EuforiaSecure#2024') {
+    // Check for admin account — credentials must be set in environment variables
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (adminEmail && adminPassword && email === adminEmail && password === adminPassword) {
       const token = jwt.sign(
         { id: 'admin', role: 'admin' },
         process.env.JWT_SECRET || 'fallback_secret',
         { expiresIn: '7d' }
       );
-
       return res.json({
         token,
         user: {
           id: 'admin',
-          email: 'euforia.admin.2024@gmail.com',
+          email: adminEmail,
           firstName: 'Admin',
           lastName: 'User',
           is_premium: true,

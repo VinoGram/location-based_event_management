@@ -56,7 +56,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'events' | 'users' | 'discover'>('dashboard');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
-  const getToken = () => localStorage.getItem('adminToken');
+  const getToken = () => sessionStorage.getItem('token');
 
   useEffect(() => {
     fetchAnalytics();
@@ -247,10 +247,7 @@ export default function AdminDashboard() {
             Discover
           </button>
           <button
-            onClick={() => {
-              localStorage.removeItem('adminToken');
-              window.location.reload();
-            }}
+            onClick={() => window.dispatchEvent(new Event('navigateToEvents'))}
             className="px-4 py-2 bg-red-500/20 text-red-400 rounded-xl font-medium hover:bg-red-500/30 transition-all flex items-center"
           >
             <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
