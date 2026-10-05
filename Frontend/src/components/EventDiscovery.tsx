@@ -417,7 +417,7 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
 
   const initializeCurrency = async () => {
     await currencyConverter.updateRates();
-    const detectedCurrency = await currencyConverter.detectUserCurrency(userLocation);
+    const detectedCurrency = await currencyConverter.detectUserCurrency(userLocation ?? undefined);
     setUserCurrency(detectedCurrency);
   };
 
@@ -1130,7 +1130,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
   // Track click when card is viewed (only once) and fetch comments
   useEffect(() => {
     if (!hasTrackedView.current) {
-      RecommendationService.trackInteraction(event._id || event.id, 'click');
+      RecommendationService.trackInteraction(event._id, 'click');
       hasTrackedView.current = true;
     }
     fetchComments();
@@ -1234,7 +1234,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
   };
 
   const handleShareToGroup = async () => {
-    RecommendationService.trackInteraction(event._id || event.id, 'share');
+    RecommendationService.trackInteraction(event._id, 'share');
     
     if (userGroups.length === 0) {
       const token = sessionStorage.getItem('token');
@@ -1736,7 +1736,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
           {showLocationMap && (
             <div className="mt-1">
               <EventLocationMap
-                event={event}
+                event={event as any}
                 onMapReady={(imageUrl) => setMapImageUrl(imageUrl)}
               />
             </div>
