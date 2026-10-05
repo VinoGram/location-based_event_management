@@ -54,8 +54,8 @@ export default function GroupChatModal({ onClose }: GroupChatModalProps) {
       socket.emit('join-global-chat');
     });
 
-    socket.on('global-message-history', (messages) => {
-      const formattedMessages = messages.map(msg => ({
+    socket.on('global-message-history', (messages: ChatMessage[]) => {
+      const formattedMessages = messages.map((msg: ChatMessage) => ({
         id: msg.id,
         user: msg.user,
         message: msg.message,

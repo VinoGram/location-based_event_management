@@ -36,8 +36,8 @@ interface Event {
   location?: {
     name: string;
     address: string;
-    latitude: number;
-    longitude: number;
+    latitude?: number;
+    longitude?: number;
   };
   users?: {
     first_name: string;
@@ -753,9 +753,9 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
                 <PremiumEventCard
                   key={`search-${event.id || event._id || `temp-${index}`}`}
                   event={event}
-                  onRSVP={(eventId, status) => handleRSVP(event.id || event._id, status)}
-                  onRate={(eventId, rating) => handleRating(event.id || event._id, rating)}
-                  onComment={(eventId, comment) => handleComment(event.id || event._id, comment)}
+                  onRSVP={(eventId, status) => handleRSVP(event.id ?? event._id, status)}
+                  onRate={(eventId, rating) => handleRating(event.id ?? event._id, rating)}
+                  onComment={(eventId, comment) => handleComment(event.id ?? event._id, comment)}
                   currency={currency}
                   userCurrency={userCurrency}
                   convertPrice={convertPrice}
@@ -815,9 +815,9 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
                   <PremiumEventCard
                     key={`discover-${event.id || event._id || `temp-${index}`}`}
                     event={event}
-                    onRSVP={(eventId, status) => handleRSVP(event.id || event._id, status)}
-                    onRate={(eventId, rating) => handleRating(event.id || event._id, rating)}
-                    onComment={(eventId, comment) => handleComment(event.id || event._id, comment)}
+                    onRSVP={(eventId, status) => handleRSVP(event.id ?? event._id, status)}
+                    onRate={(eventId, rating) => handleRating(event.id ?? event._id, rating)}
+                    onComment={(eventId, comment) => handleComment(event.id ?? event._id, comment)}
                     currency={currency}
                     userCurrency={userCurrency}
                     convertPrice={convertPrice}
@@ -1639,7 +1639,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
             </div>
           ) : (
             <button 
-              onClick={() => onRSVP(event.id || event._id, "going")}
+              onClick={() => onRSVP(event.id ?? event._id, "going")}
               className={`w-full py-2 px-4 rounded-xl font-medium transition-all text-sm flex items-center justify-center ${
                 event.userRSVP === 'going'
                   ? 'bg-[#FB8B24] text-black'
@@ -1662,7 +1662,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
         <div className="mt-2 space-y-2">
           <div className="grid grid-cols-3 gap-1.5">
             <button
-              onClick={() => onRSVP(event.id || event._id, "interested")}
+              onClick={() => onRSVP(event.id ?? event._id, "interested")}
               className={`flex flex-col items-center justify-center py-3 rounded-xl text-xs font-medium transition-all border ${
                 event.userRSVP === 'interested'
                   ? 'bg-[#DDAA52]/20 text-[#DDAA52] border-[#DDAA52]/40'
@@ -1822,7 +1822,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
               <button
                 onClick={async () => {
                   if (newComment.trim()) {
-                    await onComment(event.id || event._id, newComment);
+                    await onComment(event.id ?? event._id, newComment);
                     setNewComment('');
                     fetchComments();
                   }
@@ -1841,7 +1841,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
       
       {showOfflineViewer && (
         <OfflineEventViewer 
-          eventId={event._id || event.id} 
+          eventId={event._id} 
           onClose={() => setShowOfflineViewer(false)} 
         />
       )}
