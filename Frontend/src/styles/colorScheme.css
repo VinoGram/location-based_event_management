@@ -1,0 +1,77 @@
+/* Color Scheme Design System */
+:root {
+  /* Primary Colors */
+  --text-primary: #FFFFFF;
+  --bg-main: #000000;
+  --bg-addon: #171717;
+  --primary-design: #FB8B24;
+  --supplementary-design: #DDAA52;
+  --accent-catchy: #A31818;
+  --accent-addon: #CF0E0E;
+
+  /* Opacity Variants for Better UX */
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.5);
+  --bg-overlay: rgba(23, 23, 23, 0.8);
+  --primary-hover: rgba(251, 139, 36, 0.8);
+  --accent-hover: rgba(163, 24, 24, 0.8);
+}
+
+/* Visual Color Palette Display */
+.color-palette {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 2rem;
+  background: var(--bg-main);
+}
+
+.color-swatch {
+  padding: 2rem 1rem;
+  border-radius: 8px;
+  text-align: center;
+  color: var(--text-primary);
+  font-family: Arial, sans-serif;
+}
+
+.swatch-text { background: var(--text-primary); color: var(--bg-main); }
+.swatch-bg-main { background: var(--bg-main); border: 1px solid var(--bg-addon); }
+.swatch-bg-addon { background: var(--bg-addon); }
+.swatch-primary { background: var(--primary-design); color: var(--bg-main); }
+.swatch-supplementary { background: var(--supplementary-design); color: var(--bg-main); }
+.swatch-accent { background: var(--accent-catchy); }
+.swatch-accent-addon { background: var(--accent-addon); }
+
+/* Usage Examples */
+.example-button-primary {
+  background: var(--primary-design);
+  color: var(--bg-main);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.example-button-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+}
+
+.example-card {
+  background: var(--bg-addon);
+  color: var(--text-primary);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--supplementary-design);
+}
+
+.example-accent-element {
+  background: var(--accent-catchy);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
