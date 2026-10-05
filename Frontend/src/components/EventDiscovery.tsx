@@ -106,6 +106,7 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
   const [userGroups, setUserGroups] = useState<any[]>([]);
   const [friendActivity, setFriendActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [backgroundLoading, setBackgroundLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'discover' | 'for_you' | 'recommendations' | 'groups' | 'saved' | 'global_chat'>('discover');
   const [showUpsell, setShowUpsell] = useState(false);
   const [upsellFeature, setUpsellFeature] = useState('');
@@ -195,13 +196,13 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
     { value: 'price_high', label: 'Price: High to Low', premium: true }
   ];
 
-  const fetchEvents = async () => {
+  const fetchEvents = async (silent = false) => {
     if (!userLocation) {
       setEvents([]);
       return;
     }
-    
-    setLoading(true);
+    if (silent) setBackgroundLoading(true);
+    else setLoading(true);
     try {
       const params = new URLSearchParams();
       params.append('latitude', userLocation.latitude.toString());
@@ -232,6 +233,7 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
       toast.error("Failed to fetch events");
     } finally {
       setLoading(false);
+      setBackgroundLoading(false);
     }
   };
 
@@ -307,7 +309,7 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
           RecommendationService.trackInteraction(eventId, 'purchase');
         }
         
-        fetchEvents();
+        fetchEvents(true);
       } else {
         const data = await response.json();
         toast.error(data.message || "Failed to RSVP");
@@ -337,7 +339,7 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
       if (response.ok) {
         toast.success('Rating submitted!');
         trackRating(eventId, rating);
-        fetchEvents();
+        fetchEvents(true);
       } else {
         toast.error('Failed to submit rating');
       }
@@ -370,7 +372,7 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
         if (analysis?.sentiment === 'positive') {
           toast.success('Thanks for the positive feedback!');
         }
-        fetchEvents();
+        fetchEvents(true);
       } else {
         toast.error('Failed to add comment');
       }
@@ -390,7 +392,7 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
     window.addEventListener('savedEventsChanged', handleSavedEventsChange);
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') {
-        fetchEvents();
+        fetchEvents(true);
         if (activeTab === 'saved') fetchSavedEvents();
         fetchPersonalizedRecommendations();
       }
@@ -779,7 +781,7 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
       {/* Tab Content */}
       {!isSearching && activeTab === 'discover' && userLocation && (
         <>
-          {loading ? (
+          {loading && events.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0' }}>
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
             </div>

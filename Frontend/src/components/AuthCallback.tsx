@@ -15,7 +15,6 @@ export function AuthCallback({ onAuthSuccess }: AuthCallbackProps) {
     const error = params.get('error');
 
     if (error || !token || !userParam) {
-      toast.error('Authentication failed');
       window.location.href = '/';
       return;
     }
@@ -25,14 +24,12 @@ export function AuthCallback({ onAuthSuccess }: AuthCallbackProps) {
       sessionStorage.setItem('token', token);
       sessionStorage.setItem('user', JSON.stringify(user));
       onAuthSuccess(user);
-      // Track Google OAuth sign-in in analytics
       if (typeof window.gtag === 'function') {
         window.gtag('event', 'login', { method: 'Google' });
       }
-      toast.success('Welcome!');
+      toast.success('Welcome to Euforia!');
       window.location.href = '/';
     } catch {
-      toast.error('Authentication failed');
       window.location.href = '/';
     }
   }, [onAuthSuccess]);
