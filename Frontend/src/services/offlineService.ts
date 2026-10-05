@@ -63,7 +63,21 @@ export class OfflineService {
 
   private static async downloadVenueMap(location: any): Promise<any> {
     try {
-      const mapData = {
+      const mapData: {
+        coordinates: { lat: any; lng: any };
+        address: any;
+        name: any;
+        overviewMap: string;
+        detailMap: string;
+        satelliteMap: string;
+        streetView: string;
+        venueLayout: any;
+        nearbyLandmarks: string[];
+        parkingInfo: any;
+        publicTransport: any;
+        overviewMapBase64?: string | null;
+        detailMapBase64?: string | null;
+      } = {
         coordinates: { lat: location.latitude, lng: location.longitude },
         address: location.address,
         name: location.name,

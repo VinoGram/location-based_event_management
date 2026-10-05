@@ -5,8 +5,16 @@ interface GroupPlanningModalProps {
   onClose: () => void;
 }
 
+interface GroupPlan {
+  id: number;
+  event: string;
+  meetPlace: string;
+  meetTime: string;
+  attendees: number;
+}
+
 export default function GroupPlanningModal({ onClose }: GroupPlanningModalProps) {
-  const [plans, setPlans] = useState([]);
+  const [plans, setPlans] = useState<GroupPlan[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newPlan, setNewPlan] = useState({ event: '', meetPlace: '', meetTime: '' });

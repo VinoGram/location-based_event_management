@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { uploadToCloudinary } from '../services/cloudinaryService';
-import { supabase } from '../lib/supabase';
+import { API_URL } from '../config';
 
 interface ProfilePictureUploadProps {
   currentImageUrl?: string;
@@ -16,21 +16,19 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({ currentImag
 
     setUploading(true);
     try {
-      // Upload to Cloudinary
       const imageUrl = await uploadToCloudinary(file);
       
-      // Save URL to database
-      const { data: user } = await supabase.auth.getUser();
-      if (user.user) {
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({ 
-            id: user.user.id,
-            email: user.user.email,
-            profile_picture_url: imageUrl 
-          });
-        
-        if (!error) onImageUpdated(imageUrl);
+      const token = sessionStorage.getItem('token');
+      if (token) {
+        const res = await fetch(`${API_URL}/api/users/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ profile_picture_url: imageUrl })
+        });
+        if (res.ok) onImageUpdated(imageUrl);
       }
     } catch (error) {
       console.error('Upload failed:', error);

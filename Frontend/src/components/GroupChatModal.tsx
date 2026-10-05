@@ -6,8 +6,17 @@ interface GroupChatModalProps {
   onClose: () => void;
 }
 
+interface ChatMessage {
+  id: string | number;
+  user: string;
+  message: string;
+  avatar: string | null;
+  timestamp: string;
+  time: string;
+}
+
 export default function GroupChatModal({ onClose }: GroupChatModalProps) {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [userName, setUserName] = useState('');

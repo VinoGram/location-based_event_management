@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { API_URL } from '../config';
 import { currencyService } from '../services/currencyService';
 import CurrencySelector from './CurrencySelector';
 
@@ -39,34 +39,21 @@ const OrganizerEarningsDashboard: React.FC = () => {
 
   const fetchEarningsData = async () => {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
+      const token = sessionStorage.getItem('token');
+      if (!token) return;
 
-      // Check if user has events with ticket sales
-      const { data: eventsWithSales } = await supabase
-        .from('organizer_earnings_dashboard')
-        .select('event_id')
-        .eq('organizer_id', user.user.id)
-        .gt('tickets_sold', 0);
-      
-      setHasCreatedEvents((eventsWithSales || []).length > 0);
+      const res = await fetch(`${API_URL}/api/organizer/earnings`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const data: EarningsData[] = await res.json();
 
-      if ((eventsWithSales || []).length === 0) return;
+      setHasCreatedEvents(data.length > 0);
+      if (data.length === 0) return;
 
-      const { data, error } = await supabase
-        .from('organizer_earnings_dashboard')
-        .select('*')
-        .eq('organizer_id', user.user.id);
-
-      if (error) throw error;
-
-      setEarnings(data || []);
-      
-      const total = data?.reduce((sum, event) => sum + (event.organizer_earnings || 0), 0) || 0;
-      const tickets = data?.reduce((sum, event) => sum + (event.tickets_sold || 0), 0) || 0;
-      
-      setTotalEarnings(total);
-      setTotalTicketsSold(tickets);
+      setEarnings(data);
+      setTotalEarnings(data.reduce((sum, e) => sum + (e.organizer_earnings || 0), 0));
+      setTotalTicketsSold(data.reduce((sum, e) => sum + (e.tickets_sold || 0), 0));
     } catch (error) {
       console.error('Error fetching earnings:', error);
     }
@@ -74,16 +61,13 @@ const OrganizerEarningsDashboard: React.FC = () => {
 
   const fetchPayoutsData = async () => {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
+      const token = sessionStorage.getItem('token');
+      if (!token) return;
 
-      const { data, error } = await supabase
-        .from('pending_payouts')
-        .select('*')
-        .eq('organizer_id', user.user.id);
-
-      if (error) throw error;
-      setPayouts(data || []);
+      const res = await fetch(`${API_URL}/api/organizer/payouts`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) setPayouts(await res.json());
     } catch (error) {
       console.error('Error fetching payouts:', error);
     } finally {

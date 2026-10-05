@@ -34,7 +34,7 @@ export default function UserProfile({ user, onLogout }: UserProfileProps) {
     },
   });
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchProfile = async () => {
@@ -608,7 +608,7 @@ function ProfileForm({
   avatarPreview: string | null;
   interestOptions: string[];
   isSubmitting: boolean;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  fileInputRef: React.RefObject<HTMLInputElement>;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onInterestToggle: (interest: string) => void;
   onAvatarUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;

@@ -25,7 +25,7 @@ import EventLocationMap from './EventLocationMap';
 
 interface Event {
   id?: string;
-  _id?: string;
+  _id: string;
   title: string;
   description: string;
   category: string;
@@ -54,13 +54,17 @@ interface Event {
   flyerUrl?: string;
   flyer_url?: string;
   isVirtual?: boolean;
-  price?: number;
+  price: number;
   priceCategory?: string;
   is_exclusive?: boolean;
-  rating?: number;
+  rating: number;
   userRating?: number;
   userRSVP?: 'going' | 'interested' | null;
   recommendationScore?: number;
+  ticketTypes?: {
+    ussdCode?: string;
+    webLink?: string;
+  };
   comments?: Array<{
     user: string;
     text: string;
@@ -271,7 +275,7 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
     }
   };
 
-  const handleRSVP = async (eventId: string | number, status: "going" | "interested") => {
+  const handleRSVP = async (eventId: string, status: "going" | "interested") => {
     if (!eventId || eventId === 'undefined') {
       toast.error("Invalid event ID");
       return;
@@ -749,9 +753,9 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
                 <PremiumEventCard
                   key={`search-${event.id || event._id || `temp-${index}`}`}
                   event={event}
-                  onRSVP={(eventId, status) => handleRSVP(event.id || event._id || eventId, status)}
-                  onRate={(eventId, rating) => handleRating(event.id || event._id || eventId, rating)}
-                  onComment={(eventId, comment) => handleComment(event.id || event._id || eventId, comment)}
+                  onRSVP={(eventId, status) => handleRSVP(event.id || event._id, status)}
+                  onRate={(eventId, rating) => handleRating(event.id || event._id, rating)}
+                  onComment={(eventId, comment) => handleComment(event.id || event._id, comment)}
                   currency={currency}
                   userCurrency={userCurrency}
                   convertPrice={convertPrice}
@@ -811,9 +815,9 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
                   <PremiumEventCard
                     key={`discover-${event.id || event._id || `temp-${index}`}`}
                     event={event}
-                    onRSVP={(eventId, status) => handleRSVP(event.id || event._id || eventId, status)}
-                    onRate={(eventId, rating) => handleRating(event.id || event._id || eventId, rating)}
-                    onComment={(eventId, comment) => handleComment(event.id || event._id || eventId, comment)}
+                    onRSVP={(eventId, status) => handleRSVP(event.id || event._id, status)}
+                    onRate={(eventId, rating) => handleRating(event.id || event._id, rating)}
+                    onComment={(eventId, comment) => handleComment(event.id || event._id, comment)}
                     currency={currency}
                     userCurrency={userCurrency}
                     convertPrice={convertPrice}
@@ -1162,7 +1166,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
       // Get user's current location for navigation
       let userLat = 0, userLng = 0;
       if (navigator.geolocation) {
-        const position = await new Promise((resolve, reject) => {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject);
         });
         userLat = position.coords.latitude;
@@ -1380,7 +1384,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
           <button
             onClick={async () => {
               try {
-                const response = await fetch(event.flyerUrl || event.flyer_url);
+                const response = await fetch((event.flyerUrl || event.flyer_url)!);
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
@@ -1389,7 +1393,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
                 link.click();
                 window.URL.revokeObjectURL(url);
               } catch (error) {
-                window.open(event.flyerUrl || event.flyer_url, '_blank');
+                window.open((event.flyerUrl || event.flyer_url)!, '_blank');
               }
             }}
             className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1603,27 +1607,27 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
 
         {/* Event Attendance */}
         <div className="mb-4">
-          {event.price > 0 || event.ticketTypes ? (
+          {(event.price > 0 || event.ticketTypes) ? (
             <div className="space-y-2">
               <div className="text-center mb-3">
                 <span className="text-[#FB8B24] font-semibold">Paid Event - Purchase Tickets</span>
               </div>
               
-              {event.ticketTypes?.ussdCode && (
+              {event.ticketTypes?.ussdCode ? (
                 <button
-                  onClick={() => window.location.href = `tel:${event.ticketTypes.ussdCode}`}
+                  onClick={() => window.location.href = `tel:${event.ticketTypes!.ussdCode}`}
                   className="w-full py-2 px-4 rounded-xl font-medium transition-all text-sm flex items-center justify-center bg-[#FB8B24] text-black hover:bg-[#DDAA52]"
                 >
                   <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                   </svg>
-                  Dial {event.ticketTypes.ussdCode}
+                  Dial {event.ticketTypes!.ussdCode}
                 </button>
-              )}
+              ) : null}
               
-              {event.ticketTypes?.webLink && (
+              {event.ticketTypes?.webLink ? (
                 <button
-                  onClick={() => window.open(event.ticketTypes.webLink, '_blank')}
+                  onClick={() => window.open(event.ticketTypes!.webLink, '_blank')}
                   className="w-full py-2 px-4 rounded-xl font-medium transition-all text-sm flex items-center justify-center bg-[#171717] text-[#DDAA52] border border-[#DDAA52]/30 hover:bg-[#DDAA52] hover:text-black"
                 >
                   <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -1631,11 +1635,11 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
                   </svg>
                   Buy Online
                 </button>
-              )}
+              ) : null}
             </div>
           ) : (
             <button 
-              onClick={() => onRSVP(event.id || event._id || 'temp-id', "going")}
+              onClick={() => onRSVP(event.id || event._id, "going")}
               className={`w-full py-2 px-4 rounded-xl font-medium transition-all text-sm flex items-center justify-center ${
                 event.userRSVP === 'going'
                   ? 'bg-[#FB8B24] text-black'
@@ -1658,7 +1662,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
         <div className="mt-2 space-y-2">
           <div className="grid grid-cols-3 gap-1.5">
             <button
-              onClick={() => onRSVP(event.id || event._id || 'temp-id', "interested")}
+              onClick={() => onRSVP(event.id || event._id, "interested")}
               className={`flex flex-col items-center justify-center py-3 rounded-xl text-xs font-medium transition-all border ${
                 event.userRSVP === 'interested'
                   ? 'bg-[#DDAA52]/20 text-[#DDAA52] border-[#DDAA52]/40'
@@ -1818,7 +1822,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
               <button
                 onClick={async () => {
                   if (newComment.trim()) {
-                    await onComment(event.id || event._id || 'temp-id', newComment);
+                    await onComment(event.id || event._id, newComment);
                     setNewComment('');
                     fetchComments();
                   }
@@ -1837,7 +1841,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
       
       {showOfflineViewer && (
         <OfflineEventViewer 
-          eventId={event._id || event.id || 'temp-id'} 
+          eventId={event._id || event.id} 
           onClose={() => setShowOfflineViewer(false)} 
         />
       )}
