@@ -4,7 +4,7 @@ interface Event {
   description: string;
   date: string;
   time: string;
-  location: {
+  location?: {
     name: string;
     address: string;
   };
