@@ -6,8 +6,8 @@ interface EventLocationMapProps {
     location?: {
       name: string;
       address: string;
-      latitude: number;
-      longitude: number;
+      latitude?: number;
+      longitude?: number;
     };
     location_name?: string;
     location_address?: string;

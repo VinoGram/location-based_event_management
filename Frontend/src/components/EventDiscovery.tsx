@@ -1174,7 +1174,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
       }
       
       // Create downloadable event data with map and location pin
-      const eventData = {
+      const eventData: any = {
         ...event,
         id: event.id || event._id,
         _id: event._id || event.id,
@@ -1310,7 +1310,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
       if (response.ok) {
         const newSavedState = !isSaved;
         setIsSaved(newSavedState);
-        RecommendationService.trackInteraction(event._id || event.id, 'save');
+        RecommendationService.trackInteraction(event._id, 'save');
         toast.success(newSavedState ? 'Event saved!' : 'Event unsaved!');
         
         // Refresh saved events list and recheck save status
