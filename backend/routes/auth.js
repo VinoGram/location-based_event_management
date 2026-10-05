@@ -14,7 +14,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID !== 'your-googl
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: `${process.env.BACKEND_URL}/api/auth/google/callback`
+    callbackURL: 'https://location-based-event-management.onrender.com/api/auth/google/callback'
   }, (accessToken, refreshToken, profile, done) => {
     done(null, profile);
   }));
@@ -23,6 +23,16 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID !== 'your-googl
 } else {
   console.warn('⚠️  Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env');
 }
+
+// Debug route — remove after fixing
+router.get('/google/debug', (req, res) => {
+  res.json({
+    hasClientId: !!process.env.GOOGLE_CLIENT_ID,
+    clientIdPrefix: process.env.GOOGLE_CLIENT_ID?.slice(0, 20),
+    hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: 'https://location-based-event-management.onrender.com/api/auth/google/callback'
+  });
+});
 
 // Google OAuth - initiate
 router.get('/google', (req, res, next) => {

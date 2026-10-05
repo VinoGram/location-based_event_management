@@ -31,6 +31,10 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Passport middleware (required for Google OAuth)
+const passport = require('passport');
+app.use(passport.initialize());
+
 // Neon database client (Supabase-compatible API)
 const { buildClient } = require('./db');
 const supabase = buildClient(require('./db').pool);
