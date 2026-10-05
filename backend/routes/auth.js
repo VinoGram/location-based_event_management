@@ -252,8 +252,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 
     // Check password
     if (!user.password_hash) {
-      console.log('No password hash for user:', email);
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'This account uses Google sign-in. Please click "Continue with Google".' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
