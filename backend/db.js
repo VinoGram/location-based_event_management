@@ -11,9 +11,18 @@ const connectionString = rawUrl.replace(/[?&]sslmode=[^&]*/g, (m, offset, str) =
   return m.startsWith('?') ? '' : '';
 });
 
+// Each cluster worker gets its own pool.
+// Cap per-worker connections so all workers combined stay within Neon's limit.
+// Neon free tier allows ~20 connections; with 2 workers: 8 each + headroom.
+const WORKERS = parseInt(process.env.WEB_CONCURRENCY) || require('os').cpus().length;
+const MAX_PER_WORKER = Math.max(2, Math.floor(18 / WORKERS));
+
 const pool = new Pool({
   connectionString,
-  ssl: isNeon ? { rejectUnauthorized: false } : false
+  ssl: isNeon ? { rejectUnauthorized: false } : false,
+  max: MAX_PER_WORKER,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 });
 
 // ─── Query Builder ────────────────────────────────────────────────────────────

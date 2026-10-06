@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: euforia-backend
+    runtime: node
+    buildCommand: npm install
+    startCommand: node cluster.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: WEB_CONCURRENCY
+        value: 2          # Render free tier has 1 vCPU; set to 2 on paid plans
+    healthCheckPath: /health
+    autoDeploy: true

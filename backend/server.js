@@ -202,6 +202,9 @@ io.on('connection', (socket) => {
 app.set('io', io);
 app.set('server', server);
 
+// Health check — used by Render to verify the service is up
+app.get('/health', (_req, res) => res.json({ status: 'ok', pid: process.pid }));
+
 // Routes
 app.use('/api/events', require('./routes/events'));
 app.use('/api/users', require('./routes/users'));
