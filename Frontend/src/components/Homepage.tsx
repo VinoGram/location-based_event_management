@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import AuthForm from "./AuthForm";
-import { detectCurrency } from '../utils/currency';
 
 interface HomepageProps {
   onAuthSuccess: (user: any) => void;
@@ -8,12 +7,6 @@ interface HomepageProps {
 
 export default function Homepage({ onAuthSuccess }: HomepageProps) {
   const [showAuth, setShowAuth] = useState(false);
-  const [currency, setCurrency] = useState({ code: 'USD', symbol: '$' });
-
-  useEffect(() => {
-    detectCurrency().then(setCurrency);
-  }, []);
-
   return (
     <div className="min-h-screen bg-black">
       {/* Navigation */}
@@ -111,7 +104,6 @@ export default function Homepage({ onAuthSuccess }: HomepageProps) {
             
             <div className="bg-gradient-to-br from-[#171717] to-[#171717]/80 rounded-2xl border border-[#DDAA52]/30 p-8 shadow-lg max-w-2xl mx-auto">
               <h3 className="text-2xl font-bold text-[#DDAA52] mb-4">Free </h3>
-              <div className="text-4xl font-bold text-[#DDAA52] mb-4">{currency.symbol}0</div>
               <p className="text-[#FFFFFF]/70 mb-6">All features included, no hidden costs</p>
               
               <ul className="space-y-3 mb-8">
