@@ -41,10 +41,23 @@ function App() {
   const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
   const [currentView, setCurrentView] = useState<'events' | 'profile' | 'premium' | 'settings' | 'create' | 'admin'>('events');
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
-  const [currency, setCurrency] = useState(currencyService.getCurrentCurrency());
+  const [deepLinkEventId, setDeepLinkEventId] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('event');
+  });
   
+  const [currency, setCurrency] = useState(currencyService.getCurrentCurrency());
+
   // Eager live updates for everyone
   useLiveUpdates();
+
+  // Handle deep link: ?event=ID — navigate to events tab and clear param
+  useEffect(() => {
+    if (deepLinkEventId) {
+      setCurrentView('events');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [deepLinkEventId]);
 
   const requestLocation = () => {
     if (!navigator.geolocation) { setLocationPermission('denied'); return; }
@@ -254,7 +267,7 @@ function App() {
       <Box as="main" maxW="7xl" mx="auto" px={[3, 4, 8]} py={[4, 6, 8]} pb={['80px', '80px', 8]}>
         <div key={currentView} className="page-enter will-animate">
           <Suspense fallback={<ViewLoader />}>
-            {currentView === 'events'   && <EventDiscovery userLocation={userLocation} currency={currency} />}
+            {currentView === 'events'   && <EventDiscovery userLocation={userLocation} currency={currency} deepLinkEventId={deepLinkEventId} />}
             {currentView === 'profile'  && <UserProfile user={user} onLogout={handleLogout} />}
             {currentView === 'create'   && <CreateEvent />}
             {currentView === 'settings' && <SettingsScreen user={user} onUpgrade={handleUpgrade} onLogout={handleLogout} />}

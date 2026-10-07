@@ -85,6 +85,7 @@ interface AppEvent {
 interface EventDiscoveryProps {
   userLocation: {latitude: number, longitude: number} | null;
   currency: { code: string; symbol: string };
+  deepLinkEventId?: string | null;
 }
 
 interface ConvertedPrice {
@@ -93,7 +94,7 @@ interface ConvertedPrice {
   rate: number;
 }
 
-export default function EventDiscovery({ userLocation, currency }: EventDiscoveryProps) {
+export default function EventDiscovery({ userLocation, currency, deepLinkEventId }: EventDiscoveryProps) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [events, setEvents] = useState<AppEvent[]>([]);
   const [forYouEvents, setForYouEvents] = useState<AppEvent[]>([]);
@@ -116,7 +117,22 @@ export default function EventDiscovery({ userLocation, currency }: EventDiscover
   const [userCurrency, setUserCurrency] = useState('USD');
   const [showOriginalPrice, setShowOriginalPrice] = useState(false);
   
-  const { trackRating, trackInterested, sendFeedback } = useEngagement();
+  const [deepLinkedEvent, setDeepLinkedEvent] = useState<Event | null>(null);
+  const deepLinkRef = useRef<HTMLDivElement>(null);
+
+  // Fetch and highlight the deep-linked event
+  useEffect(() => {
+    if (!deepLinkEventId) return;
+    fetch(`${API_URL}/api/events/${deepLinkEventId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) {
+          setDeepLinkedEvent(data);
+          setTimeout(() => deepLinkRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+        }
+      })
+      .catch(() => {});
+  }, [deepLinkEventId]);
   const { analyzeComment } = useSentimentAnalysis();
   const { requestNotificationPermission } = useNotifications();
   
@@ -1678,13 +1694,24 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
             </button>
             <CalendarDropdown event={event} compact />
             <button
-              onClick={handleShareToGroup}
+              onClick={async () => {
+                const eventId = event._id || event.id;
+                const shareUrl = `${API_URL}/api/events/${eventId}/preview`;
+                const shareData = { title: event.title, text: `Check out ${event.title} on Euforia!`, url: shareUrl };
+                RecommendationService.trackInteraction(eventId, 'share');
+                if (navigator.share && navigator.canShare?.(shareData)) {
+                  try { await navigator.share(shareData); } catch {}
+                } else {
+                  await navigator.clipboard.writeText(shareUrl);
+                  toast.success('Link copied!');
+                }
+              }}
               className="flex flex-col items-center justify-center py-3 rounded-xl text-xs font-medium transition-all border bg-[#171717] text-white/60 border-white/10 hover:border-[#FB8B24]/40 hover:text-[#FB8B24]"
             >
-              <svg className="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+              <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
-              Group
+              Share
             </button>
           </div>
           <div className="grid grid-cols-4 gap-1.5">

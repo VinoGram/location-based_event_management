@@ -445,6 +445,67 @@ router.get('/friend-activity', auth, async (req, res) => {
 
 // ── Parameterized routes AFTER all specific routes ────────────────────────────
 
+// Share preview page — returns HTML with OG meta tags so social platforms
+// show the flyer image when the link is shared
+router.get('/:id/preview', async (req, res) => {
+  try {
+    const supabase = req.app.get('supabase');
+    const { data: event, error } = await supabase
+      .from('events')
+      .select('id, title, description, date, time, location_name, flyer_url, category')
+      .eq('id', req.params.id)
+      .single();
+
+    if (error || !event) return res.status(404).send('Event not found');
+
+    const APP_URL = process.env.FRONTEND_URL || 'https://euforia-event.vercel.app';
+    const deepLink = `${APP_URL}?event=${event.id}`;
+    const image = event.flyer_url || `${APP_URL}/logo.png`;
+    const title = event.title;
+    const desc = `${event.date} · ${event.location_name || 'Location TBD'} — ${(event.description || '').slice(0, 120)}`;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>${title} — Euforia</title>
+  <meta name="description" content="${desc}" />
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="${deepLink}" />
+  <meta property="og:title" content="${title}" />
+  <meta property="og:description" content="${desc}" />
+  <meta property="og:image" content="${image}" />
+  <meta property="og:image:width" content="800" />
+  <meta property="og:image:height" content="1200" />
+  <meta property="og:site_name" content="Euforia" />
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${title}" />
+  <meta name="twitter:description" content="${desc}" />
+  <meta name="twitter:image" content="${image}" />
+  <!-- Instant redirect for real users -->
+  <meta http-equiv="refresh" content="0;url=${deepLink}" />
+  <style>
+    body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;}
+    a{display:block;text-align:center;text-decoration:none;}
+    img{max-width:340px;width:90vw;border-radius:16px;box-shadow:0 8px 40px rgba(251,139,36,0.3);}
+    p{color:#FB8B24;font-weight:700;margin-top:16px;font-size:18px;}
+  </style>
+</head>
+<body>
+  <a href="${deepLink}">
+    <img src="${image}" alt="${title}" />
+    <p>Open in Euforia →</p>
+  </a>
+</body>
+</html>`);
+  } catch (error) {
+    res.status(500).send('Error loading event');
+  }
+});
+
 // Get real analytics for a single event (owner only)
 router.get('/:id/analytics', auth, async (req, res) => {
   try {
