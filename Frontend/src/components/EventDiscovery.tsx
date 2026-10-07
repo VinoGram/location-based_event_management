@@ -1698,7 +1698,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
             <CalendarDropdown event={event} compact />
             <button
               onClick={async () => {
-                const eventId = event._id || event.id;
+                const eventId = (event._id || event.id) as string;
                 const backendBase = 'https://location-based-event-management.onrender.com';
                 const shareUrl = `${backendBase}/api/events/${eventId}/preview`;
                 const shareData = { title: event.title, text: `Check out ${event.title} on Euforia!`, url: shareUrl };
