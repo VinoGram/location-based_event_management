@@ -135,6 +135,9 @@ export default function EventDiscovery({ userLocation, currency, deepLinkEventId
   }, [deepLinkEventId]);
   const { analyzeComment } = useSentimentAnalysis();
   const { requestNotificationPermission } = useNotifications();
+
+  const trackInterested = (eventId: string) => RecommendationService.trackInteraction(eventId, 'save');
+  const trackRating = (eventId: string, _rating: number) => RecommendationService.trackInteraction(eventId, 'click');
   
   const [filters, setFilters] = useState({
     categories: [] as string[],
@@ -1696,14 +1699,19 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
             <button
               onClick={async () => {
                 const eventId = event._id || event.id;
-                const shareUrl = `${API_URL}/api/events/${eventId}/preview`;
+                const backendBase = 'https://location-based-event-management.onrender.com';
+                const shareUrl = `${backendBase}/api/events/${eventId}/preview`;
                 const shareData = { title: event.title, text: `Check out ${event.title} on Euforia!`, url: shareUrl };
                 RecommendationService.trackInteraction(eventId, 'share');
                 if (navigator.share && navigator.canShare?.(shareData)) {
                   try { await navigator.share(shareData); } catch {}
                 } else {
-                  await navigator.clipboard.writeText(shareUrl);
-                  toast.success('Link copied!');
+                  try {
+                    await navigator.clipboard.writeText(shareUrl);
+                    toast.success('Link copied!');
+                  } catch {
+                    toast.success(`Share link: ${shareUrl}`);
+                  }
                 }
               }}
               className="flex flex-col items-center justify-center py-3 rounded-xl text-xs font-medium transition-all border bg-[#171717] text-white/60 border-white/10 hover:border-[#FB8B24]/40 hover:text-[#FB8B24]"
