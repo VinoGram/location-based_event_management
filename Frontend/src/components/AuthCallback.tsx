@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { toast } from 'sonner';
 
 declare global { interface Window { gtag?: (...args: any[]) => void; } }
 
@@ -27,7 +26,6 @@ export function AuthCallback({ onAuthSuccess }: AuthCallbackProps) {
       if (typeof window.gtag === 'function') {
         window.gtag('event', 'login', { method: 'Google' });
       }
-      toast.success('Welcome to Euforia!');
       window.location.href = '/';
     } catch {
       window.location.href = '/';

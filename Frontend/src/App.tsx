@@ -40,7 +40,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
   const [currentView, setCurrentView] = useState<'events' | 'profile' | 'premium' | 'settings' | 'create' | 'admin'>('events');
-  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
+  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'requesting'>('prompt');
   const [deepLinkEventId, setDeepLinkEventId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('event');
@@ -61,14 +61,20 @@ function App() {
 
   const requestLocation = () => {
     if (!navigator.geolocation) { setLocationPermission('denied'); return; }
-    // Fast low-accuracy fix first so events load immediately
+    setLocationPermission('requesting');
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setUserLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
         setLocationPermission('granted');
+        // Start watching only after initial permission is granted
+        navigator.geolocation.watchPosition(
+          (pos) => setUserLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+          () => {},
+          { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+        );
       },
       () => setLocationPermission('denied'),
-      { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
     );
   };
 
@@ -126,19 +132,6 @@ function App() {
 
     requestLocation();
 
-    // Upgrade to high-accuracy watch after initial fast fix
-    let watchId: number | null = null;
-    if (navigator.geolocation) {
-      watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          setUserLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
-          setLocationPermission('granted');
-        },
-        () => {},
-        { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
-      );
-    }
-
     // Defer currency detection — not needed for initial render
     setTimeout(() => {
       if (userLocation) {
@@ -156,7 +149,6 @@ function App() {
     window.addEventListener('navigateToProfile', handleNavigateToProfile);
 
     return () => {
-      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
       window.removeEventListener('navigateToCreate', handleNavigateToCreate);
       window.removeEventListener('navigateToEvents', handleNavigateToEvents);
       window.removeEventListener('navigateToProfile', handleNavigateToProfile);
@@ -240,24 +232,33 @@ function App() {
         </Box>
       </Box>
 
-      {locationPermission === 'denied' && (
+      {(locationPermission === 'denied' || locationPermission === 'requesting') && (
         <Alert status="warning" bg="rgba(251,139,36,0.1)" borderBottom="1px" borderColor="rgba(251,139,36,0.3)">
           <Box maxW="7xl" mx="auto" w="full" px={[3,4,8]}>
             <Flex justify="space-between" align="center" gap={2} flexWrap="wrap" py={1}>
               <HStack spacing={3}>
                 <AlertIcon color="#FB8B24" />
                 <VStack align="start" spacing={0}>
-                  <AlertTitle color="white" fontWeight="semibold" fontSize={['sm', 'md']}>Location needed</AlertTitle>
+                  <AlertTitle color="white" fontWeight="semibold" fontSize={['sm', 'md']}>
+                    {locationPermission === 'requesting' ? 'Waiting for permission...' : 'Location needed'}
+                  </AlertTitle>
                   <AlertDescription color="whiteAlpha.700" fontSize="xs">
-                    Enable location to find events near you
+                    {locationPermission === 'requesting'
+                      ? 'Please allow location access in your browser prompt'
+                      : 'Enable location to find events near you'}
                   </AlertDescription>
                 </VStack>
               </HStack>
-              <Button onClick={requestLocation}
-                size="sm"
-                style={{ background: 'linear-gradient(90deg,#FB8B24,#DDAA52)', color: '#000', fontWeight: 700, borderRadius: 10 }}>
-                Enable Location
-              </Button>
+              {locationPermission === 'denied' && (
+                <Button onClick={requestLocation}
+                  size="sm"
+                  style={{ background: 'linear-gradient(90deg,#FB8B24,#DDAA52)', color: '#000', fontWeight: 700, borderRadius: 10 }}>
+                  Enable Location
+                </Button>
+              )}
+              {locationPermission === 'requesting' && (
+                <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid rgba(251,139,36,0.3)', borderTopColor: '#FB8B24', animation: 'spin 0.8s linear infinite' }} />
+              )}
             </Flex>
           </Box>
         </Alert>
