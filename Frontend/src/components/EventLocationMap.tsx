@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface EventLocationMapProps {
   event: {
@@ -18,54 +18,37 @@ interface EventLocationMapProps {
 }
 
 export default function EventLocationMap({ event: eventData, onMapReady }: EventLocationMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const [mapImageUrl, setMapImageUrl] = useState<string>('');
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [imgFailed, setImgFailed] = useState(false);
 
-  // Resolve coords from either nested location object or flat columns
-  const getCoords = () => ({
-    lat: parseFloat(String(eventData.location?.latitude || eventData.latitude || 0)) || 0,
-    lng: parseFloat(String(eventData.location?.longitude || eventData.longitude || 0)) || 0,
-  });
+  const eventLat = parseFloat(String(eventData.location?.latitude || eventData.latitude || 0)) || 0;
+  const eventLng = parseFloat(String(eventData.location?.longitude || eventData.longitude || 0)) || 0;
+  const hasCoords = eventLat !== 0 || eventLng !== 0;
+
+  const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
+        (p) => setUserLocation({ lat: p.coords.latitude, lng: p.coords.longitude }),
         () => setUserLocation(null)
       );
     }
   }, []);
 
   useEffect(() => {
-    const { lat, lng } = getCoords();
-
-    if (lat === 0 && lng === 0) {
-      setMapImageUrl('');
-      return;
-    }
-
-    setMapImageUrl('custom-map');
-    if (onMapReady) onMapReady('custom-map');
-  }, [eventData, onMapReady, userLocation]);
+    if (hasCoords && onMapReady) onMapReady('custom-map');
+  }, [hasCoords]);
 
   const openDirections = () => {
-    const { lat, lng } = getCoords();
     const url = userLocation
-      ? `https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${lat},${lng}/data=!3m1!4b1!4m2!4m1!3e0`
-      : `https://www.google.com/maps/place/${lat},${lng}/@${lat},${lng},15z`;
+      ? `https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${eventLat},${eventLng}`
+      : `https://www.google.com/maps?q=${eventLat},${eventLng}`;
     window.open(url, '_blank');
   };
 
-  const { lat: eventLat, lng: eventLng } = getCoords();
-  const hasCoords = eventLat !== 0 || eventLng !== 0;
-
-  const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+  const osmSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${eventLng - 0.01},${eventLat - 0.01},${eventLng + 0.01},${eventLat + 0.01}&layer=mapnik&marker=${eventLat},${eventLng}`;
+  const proxySrc = `${API_BASE}/api/map/static?lat=${eventLat}&lng=${eventLng}`;
 
   return (
     <div className="bg-gradient-to-br from-[#171717] to-[#171717]/80 rounded-xl border border-[#FB8B24]/30 p-4">
@@ -79,10 +62,9 @@ export default function EventLocationMap({ event: eventData, onMapReady }: Event
         {hasCoords && (
           <button
             onClick={openDirections}
-            className="bg-[#FB8B24] text-black px-3 py-1 rounded text-xs font-medium hover:bg-[#DDAA52] transition-colors flex items-center"
-            title={userLocation ? "Get Directions" : "View Location"}
+            className="bg-[#FB8B24] text-black px-3 py-1 rounded text-xs font-medium hover:bg-[#DDAA52] transition-colors flex items-center gap-1"
           >
-            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
             {userLocation ? 'Directions' : 'View on Map'}
@@ -90,41 +72,36 @@ export default function EventLocationMap({ event: eventData, onMapReady }: Event
         )}
       </div>
 
-      {mapImageUrl ? (
+      {hasCoords ? (
         <div className="w-full rounded-lg border border-[#DDAA52]/20 overflow-hidden">
-          <img
-            title="Event Location Map"
-            width="100%"
-            height="220"
-            style={{ display: 'block', width: '100%', height: 220, objectFit: 'cover', cursor: 'pointer' }}
-            src={`${API_BASE}/api/map/static?lat=${eventLat}&lng=${eventLng}`}
-            alt="Event location map"
-            onClick={openDirections}
-            onError={(e) => {
-              // Fallback to OpenStreetMap iframe if proxy fails
-              const parent = (e.target as HTMLImageElement).parentElement;
-              if (parent) {
-                parent.innerHTML = `<iframe
-                  title="Event Location Map"
-                  width="100%"
-                  height="220"
-                  style="border:0;display:block;cursor:pointer"
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=${eventLng - 0.01},${eventLat - 0.01},${eventLng + 0.01},${eventLat + 0.01}&layer=mapnik&marker=${eventLat},${eventLng}"
-                ></iframe>`;
-              }
-            }}
-          />
+          {!imgFailed ? (
+            <img
+              style={{ display: 'block', width: '100%', height: 220, objectFit: 'cover', cursor: 'pointer' }}
+              src={proxySrc}
+              alt="Event location map"
+              onClick={openDirections}
+              onError={() => setImgFailed(true)}
+            />
+          ) : (
+            <iframe
+              title="Event Location Map"
+              width="100%"
+              height="220"
+              style={{ border: 0, display: 'block' }}
+              src={osmSrc}
+            />
+          )}
           {userLocation && (
             <div className="bg-[#171717]/90 p-3 border-t border-[#DDAA52]/20">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-3">
                   <span className="flex items-center gap-1 text-green-400">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-green-500 rounded-full" />
                     You
                   </span>
-                  <div className="w-6 h-0.5 bg-blue-500"></div>
+                  <div className="w-6 h-0.5 bg-blue-500" />
                   <span className="flex items-center gap-1 text-[#FB8B24]">
-                    <div className="w-2 h-2 bg-[#FB8B24] rounded-full"></div>
+                    <div className="w-2 h-2 bg-[#FB8B24] rounded-full" />
                     Event
                   </span>
                 </div>
@@ -137,7 +114,7 @@ export default function EventLocationMap({ event: eventData, onMapReady }: Event
         </div>
       ) : (
         <div className="w-full h-48 bg-[#171717]/50 rounded-lg border border-[#DDAA52]/20 flex items-center justify-center">
-          <div className="text-center text-[#FFFFFF]/60">
+          <div className="text-center text-white/60">
             <svg className="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
@@ -150,11 +127,11 @@ export default function EventLocationMap({ event: eventData, onMapReady }: Event
         <div className="text-sm text-[#DDAA52] font-medium">
           {eventData.location?.name || eventData.location_name || 'Event Location'}
         </div>
-        <div className="text-xs text-[#FFFFFF]/70">
+        <div className="text-xs text-white/70">
           {eventData.location?.address || eventData.location_address || 'Address TBD'}
         </div>
         {hasCoords && (
-          <div className="text-xs text-[#FFFFFF]/50 mt-1">
+          <div className="text-xs text-white/40 mt-1">
             {eventLat.toFixed(4)}, {eventLng.toFixed(4)}
           </div>
         )}
