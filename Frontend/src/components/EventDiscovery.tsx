@@ -811,7 +811,7 @@ export default function EventDiscovery({ userLocation, currency, deepLinkEventId
                 if (filters.categories.length > 0 && !filters.categories.includes(event.category)) return false;
                 if (filters.priceRange.min > 0 && event.price < filters.priceRange.min) return false;
                 if (filters.priceRange.max < 1000 && event.price > filters.priceRange.max) return false;
-                if (filters.rating > 0 && event.rating < filters.rating) return false;
+                if (filters.rating > 0 && (parseFloat(String(event.rating)) || 0) < filters.rating) return false;
                 if (filters.hasTickets !== null && (event.price > 0) !== filters.hasTickets) return false;
                 return true;
               })
@@ -1447,7 +1447,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
             <p className="text-white/60 text-sm">
               by {event.users?.first_name || event.creator?.firstName || event.creator?.first_name || 'Unknown'} {event.users?.last_name || event.creator?.lastName || event.creator?.last_name || 'User'}
             </p>
-{(() => { const r = Number(event.rating); return r > 0 ? (
+{(() => { const r = parseFloat(String(event.rating ?? 0)) || 0; return r > 0 ? (
               <div className="flex items-center">
                 <div className="flex items-center mr-1">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -1864,12 +1864,11 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
                     fetchComments();
                   }
                 }}
-                className="px-4 py-2 bg-[#FB8B24] text-black rounded-lg hover:bg-[#DDAA52] transition-colors text-sm font-medium flex items-center"
+                className="px-4 py-2 bg-[#FB8B24] text-black rounded-lg hover:bg-[#DDAA52] transition-colors text-sm font-medium flex items-center justify-center"
               >
-                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd" />
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                 </svg>
-                Post
               </button>
             </div>
           </div>
