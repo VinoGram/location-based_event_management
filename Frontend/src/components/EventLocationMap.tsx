@@ -24,8 +24,8 @@ export default function EventLocationMap({ event: eventData, onMapReady }: Event
 
   // Resolve coords from either nested location object or flat columns
   const getCoords = () => ({
-    lat: eventData.location?.latitude || eventData.latitude || 0,
-    lng: eventData.location?.longitude || eventData.longitude || 0,
+    lat: parseFloat(String(eventData.location?.latitude || eventData.latitude || 0)) || 0,
+    lng: parseFloat(String(eventData.location?.longitude || eventData.longitude || 0)) || 0,
   });
 
   useEffect(() => {

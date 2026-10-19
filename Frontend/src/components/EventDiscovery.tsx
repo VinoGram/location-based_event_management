@@ -1112,7 +1112,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
   const [isSaved, setIsSaved] = useState(false);
 
   // distance badge
-  const distanceKm = (event as any).distance_km as number | null | undefined;
+  const distanceKm = (event as any).distance_km != null ? parseFloat(String((event as any).distance_km)) : null;
 
   // Check if event is saved on mount
   useEffect(() => {
