@@ -57,6 +57,7 @@ app.get('/api/map/static', async (req, res) => {
     const buffer = await mapRes.arrayBuffer();
     res.set('Content-Type', 'image/png');
     res.set('Cache-Control', 'public, max-age=86400');
+    res.set('Access-Control-Allow-Origin', '*');
     res.send(Buffer.from(buffer));
   } catch (err) {
     res.status(500).json({ message: 'Map fetch failed' });

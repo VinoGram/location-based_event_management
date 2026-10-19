@@ -65,6 +65,8 @@ export default function EventLocationMap({ event: eventData, onMapReady }: Event
   const { lat: eventLat, lng: eventLng } = getCoords();
   const hasCoords = eventLat !== 0 || eventLng !== 0;
 
+  const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
   return (
     <div className="bg-gradient-to-br from-[#171717] to-[#171717]/80 rounded-xl border border-[#FB8B24]/30 p-4">
       <div className="flex items-center justify-between mb-3">
@@ -95,9 +97,22 @@ export default function EventLocationMap({ event: eventData, onMapReady }: Event
             width="100%"
             height="220"
             style={{ display: 'block', width: '100%', height: 220, objectFit: 'cover', cursor: 'pointer' }}
-            src={`${import.meta.env.VITE_API_URL}/api/map/static?lat=${eventLat}&lng=${eventLng}`}
+            src={`${API_BASE}/api/map/static?lat=${eventLat}&lng=${eventLng}`}
             alt="Event location map"
             onClick={openDirections}
+            onError={(e) => {
+              // Fallback to OpenStreetMap iframe if proxy fails
+              const parent = (e.target as HTMLImageElement).parentElement;
+              if (parent) {
+                parent.innerHTML = `<iframe
+                  title="Event Location Map"
+                  width="100%"
+                  height="220"
+                  style="border:0;display:block;cursor:pointer"
+                  src="https://www.openstreetmap.org/export/embed.html?bbox=${eventLng - 0.01},${eventLat - 0.01},${eventLng + 0.01},${eventLat + 0.01}&layer=mapnik&marker=${eventLat},${eventLng}"
+                ></iframe>`;
+              }
+            }}
           />
           {userLocation && (
             <div className="bg-[#171717]/90 p-3 border-t border-[#DDAA52]/20">
