@@ -359,37 +359,23 @@ router.get('/for-you', auth, async (req, res) => {
 // Get user's saved events — must be before /:id
 router.get('/user/saved', auth, async (req, res) => {
   try {
-    const supabase = req.app.get('supabase');
-    
-    const { data: savedEvents, error } = await supabase
-      .from('saved_events')
-      .select(`
-        events (
-          id,
-          title,
-          description,
-          category,
-          date,
-          time,
-          location_name,
-          location_address,
-          flyer_url,
-          creator_id,
-          status,
-          created_at
-        )
-      `)
-      .eq('user_id', req.user.id);
+    const { pool } = require('../db');
 
-    if (error) {
-      console.error('Saved events error:', error);
-      return res.json([]);
-    }
+    const { rows } = await pool.query(
+      `SELECT e.id, e.title, e.description, e.category, e.date, e.time,
+              e.location_name, e.location_address, e.flyer_url,
+              e.creator_id, e.status, e.created_at, e.price,
+              e.latitude, e.longitude
+       FROM saved_events se
+       JOIN events e ON e.id = se.event_id
+       WHERE se.user_id = $1
+       ORDER BY se.created_at DESC`,
+      [req.user.id]
+    );
 
-    const events = savedEvents?.map(item => item.events) || [];
-    res.json(events);
+    res.json(rows);
   } catch (error) {
-    console.error('Saved events catch error:', error);
+    console.error('Saved events error:', error);
     res.json([]);
   }
 });
