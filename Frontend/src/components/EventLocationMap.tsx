@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState } from 'react';
 interface EventLocationMapProps {
   event: {
     title: string;
+    latitude?: number | null;
+    longitude?: number | null;
     location?: {
       name: string;
       address: string;
@@ -20,8 +22,13 @@ export default function EventLocationMap({ event: eventData, onMapReady }: Event
   const [mapImageUrl, setMapImageUrl] = useState<string>('');
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
+  // Resolve coords from either nested location object or flat columns
+  const getCoords = () => ({
+    lat: eventData.location?.latitude || eventData.latitude || 0,
+    lng: eventData.location?.longitude || eventData.longitude || 0,
+  });
+
   useEffect(() => {
-    // Get user location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -30,50 +37,33 @@ export default function EventLocationMap({ event: eventData, onMapReady }: Event
             lng: position.coords.longitude
           });
         },
-        () => {
-          setUserLocation(null);
-        }
+        () => setUserLocation(null)
       );
     }
   }, []);
 
   useEffect(() => {
-    const eventLat = eventData.location?.latitude || 0;
-    const eventLng = eventData.location?.longitude || 0;
-    
-    if (eventLat === 0 && eventLng === 0) {
+    const { lat, lng } = getCoords();
+
+    if (lat === 0 && lng === 0) {
       setMapImageUrl('');
       return;
     }
 
-    // Only set map as ready when component mounts
     setMapImageUrl('custom-map');
-    
-    if (onMapReady) {
-      onMapReady('custom-map');
-    }
+    if (onMapReady) onMapReady('custom-map');
   }, [eventData, onMapReady, userLocation]);
 
-  const downloadMap = () => {
-    if (mapImageUrl) {
-      const lat = eventData.location?.latitude || 0;
-      const lng = eventData.location?.longitude || 0;
-      let url;
-      if (userLocation) {
-        url = `https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${lat},${lng}`;
-      } else {
-        url = `https://www.google.com/maps?q=${lat},${lng}`;
-      }
-      window.open(url, '_blank');
-    }
-  };
-
-  const openInMaps = () => {
-    const lat = eventData.location?.latitude || 0;
-    const lng = eventData.location?.longitude || 0;
-    const url = `https://www.google.com/maps?q=${lat},${lng}`;
+  const openDirections = () => {
+    const { lat, lng } = getCoords();
+    const url = userLocation
+      ? `https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${lat},${lng}/data=!3m1!4b1!4m2!4m1!3e0`
+      : `https://www.google.com/maps/place/${lat},${lng}/@${lat},${lng},15z`;
     window.open(url, '_blank');
   };
+
+  const { lat: eventLat, lng: eventLng } = getCoords();
+  const hasCoords = eventLat !== 0 || eventLng !== 0;
 
   return (
     <div className="bg-gradient-to-br from-[#171717] to-[#171717]/80 rounded-xl border border-[#FB8B24]/30 p-4">
@@ -84,19 +74,9 @@ export default function EventLocationMap({ event: eventData, onMapReady }: Event
           </svg>
           Event Location
         </h4>
-        <div className="flex space-x-2">
+        {hasCoords && (
           <button
-            onClick={() => {
-              const lat = eventData.location?.latitude || 0;
-              const lng = eventData.location?.longitude || 0;
-              let url;
-              if (userLocation) {
-                url = `https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${lat},${lng}/data=!3m1!4b1!4m2!4m1!3e0`;
-              } else {
-                url = `https://www.google.com/maps/place/${lat},${lng}/@${lat},${lng},15z`;
-              }
-              window.open(url, '_blank');
-            }}
+            onClick={openDirections}
             className="bg-[#FB8B24] text-black px-3 py-1 rounded text-xs font-medium hover:bg-[#DDAA52] transition-colors flex items-center"
             title={userLocation ? "Get Directions" : "View Location"}
           >
@@ -105,60 +85,40 @@ export default function EventLocationMap({ event: eventData, onMapReady }: Event
             </svg>
             {userLocation ? 'Directions' : 'View on Map'}
           </button>
-        </div>
+        )}
       </div>
-      
+
       {mapImageUrl ? (
-        <div className="w-full h-64 rounded-lg border border-[#DDAA52]/20 bg-gradient-to-br from-[#171717] to-[#171717]/80 flex flex-col items-center justify-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#FB8B24]/10 to-[#DDAA52]/10"></div>
-          <div className="relative z-10 text-center">
-            <svg className="w-16 h-16 mx-auto mb-4 text-[#FB8B24]" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-            </svg>
-            <div className="text-[#FFFFFF] font-semibold mb-2">Event Location</div>
-            <div className="text-[#DDAA52] text-sm mb-2">{eventData.location?.name || eventData.location_name}</div>
-            <div className="text-[#FFFFFF]/70 text-xs mb-4">{eventData.location?.address || eventData.location_address}</div>
-            {userLocation && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-center space-x-4 text-xs">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-[#FFFFFF]/70">Your Location</span>
-                  </div>
-                  <div className="w-8 h-0.5 bg-blue-500"></div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-[#FB8B24] rounded-full mr-2"></div>
-                    <span className="text-[#FFFFFF]/70">Event</span>
-                  </div>
+        <div className="w-full rounded-lg border border-[#DDAA52]/20 overflow-hidden">
+          <img
+            title="Event Location Map"
+            width="100%"
+            height="220"
+            style={{ display: 'block', width: '100%', height: 220, objectFit: 'cover', cursor: 'pointer' }}
+            src={`${import.meta.env.VITE_API_URL}/api/map/static?lat=${eventLat}&lng=${eventLng}`}
+            alt="Event location map"
+            onClick={openDirections}
+          />
+          {userLocation && (
+            <div className="bg-[#171717]/90 p-3 border-t border-[#DDAA52]/20">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1 text-green-400">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    You
+                  </span>
+                  <div className="w-6 h-0.5 bg-blue-500"></div>
+                  <span className="flex items-center gap-1 text-[#FB8B24]">
+                    <div className="w-2 h-2 bg-[#FB8B24] rounded-full"></div>
+                    Event
+                  </span>
                 </div>
-                <div className="bg-[#171717]/50 rounded-lg p-3 border border-[#DDAA52]/20">
-                  <div className="text-xs text-[#FFFFFF]/70 mb-2">Route Preview:</div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col items-center">
-                      <div className="w-4 h-4 bg-green-500 rounded-full mb-1"></div>
-                      <div className="text-xs text-[#FFFFFF]/60">Start</div>
-                    </div>
-                    <div className="flex-1 mx-2 relative">
-                      <div className="h-0.5 bg-blue-500 w-full"></div>
-                      <div className="absolute top-0 left-1/4 w-1 h-1 bg-blue-400 rounded-full transform -translate-y-0.5"></div>
-                      <div className="absolute top-0 left-2/4 w-1 h-1 bg-blue-400 rounded-full transform -translate-y-0.5"></div>
-                      <div className="absolute top-0 left-3/4 w-1 h-1 bg-blue-400 rounded-full transform -translate-y-0.5"></div>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-4 h-4 bg-[#FB8B24] rounded-full mb-1"></div>
-                      <div className="text-xs text-[#FFFFFF]/60">Event</div>
-                    </div>
-                  </div>
-                  <div className="mt-2 text-xs text-[#FFFFFF]/50">
-                    Distance: ~{((Math.abs(userLocation.lat - (eventData.location?.latitude || 0)) + Math.abs(userLocation.lng - (eventData.location?.longitude || 0))) * 111).toFixed(1)} km
-                  </div>
-                  <div className="mt-2 text-xs text-[#FB8B24] font-medium">
-                    📍 {eventData.location?.name || eventData.location_name}
-                  </div>
-                </div>
+                <span className="text-white/50">
+                  ~{((Math.abs(userLocation.lat - eventLat) + Math.abs(userLocation.lng - eventLng)) * 111).toFixed(1)} km away
+                </span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="w-full h-48 bg-[#171717]/50 rounded-lg border border-[#DDAA52]/20 flex items-center justify-center">
@@ -170,7 +130,7 @@ export default function EventLocationMap({ event: eventData, onMapReady }: Event
           </div>
         </div>
       )}
-      
+
       <div className="mt-3">
         <div className="text-sm text-[#DDAA52] font-medium">
           {eventData.location?.name || eventData.location_name || 'Event Location'}
@@ -178,12 +138,9 @@ export default function EventLocationMap({ event: eventData, onMapReady }: Event
         <div className="text-xs text-[#FFFFFF]/70">
           {eventData.location?.address || eventData.location_address || 'Address TBD'}
         </div>
-        {eventData.location?.latitude && eventData.location?.longitude && (
+        {hasCoords && (
           <div className="text-xs text-[#FFFFFF]/50 mt-1">
-            Event: {eventData.location.latitude.toFixed(4)}, {eventData.location.longitude.toFixed(4)}
-            {userLocation && (
-              <div>Your location: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}</div>
-            )}
+            {eventLat.toFixed(4)}, {eventLng.toFixed(4)}
           </div>
         )}
       </div>

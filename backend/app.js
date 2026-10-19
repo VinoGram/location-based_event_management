@@ -45,6 +45,24 @@ app.use('/api/tickets', require('./routes/tickets'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/create-event', require('./routes/create-event'));
 
+// MapTiler proxy — keeps API key server-side
+app.get('/api/map/static', async (req, res) => {
+  const { lng, lat, zoom = 14, width = 600, height = 220 } = req.query;
+  if (!lng || !lat) return res.status(400).json({ message: 'lng and lat required' });
+  const key = process.env.MAPTILER_KEY;
+  const url = `https://api.maptiler.com/maps/streets-v2/static/${lng},${lat},${zoom}/${width}x${height}.png?key=${key}&markers=${lng},${lat}`;
+  try {
+    const mapRes = await fetch(url);
+    if (!mapRes.ok) return res.status(mapRes.status).end();
+    const buffer = await mapRes.arrayBuffer();
+    res.set('Content-Type', 'image/png');
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    res.status(500).json({ message: 'Map fetch failed' });
+  }
+});
+
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);

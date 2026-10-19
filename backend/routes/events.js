@@ -68,6 +68,8 @@ router.post('/create', auth, upload.single('flyer'), async (req, res) => {
         time,
         location_name: locationData?.name || 'TBD',
         location_address: locationData?.address || 'TBD',
+        latitude: locationData?.latitude || null,
+        longitude: locationData?.longitude || null,
         creator_id: req.user.id,
         status: eventStatus,
         flyer_url: flyerUrl

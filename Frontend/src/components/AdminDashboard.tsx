@@ -55,6 +55,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'events' | 'users' | 'discover'>('dashboard');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [eventFilter, setEventFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
   const getToken = () => sessionStorage.getItem('token');
 
@@ -89,7 +90,7 @@ export default function AdminDashboard() {
     if (!token) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/admin/events/pending`, {
+      const response = await fetch(`${API_URL}/api/admin/events`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -357,7 +358,22 @@ export default function AdminDashboard() {
 
       {activeTab === 'events' && (
         <div className="space-y-4">
-          {events.map((event) => (
+          <div className="flex gap-1 bg-[#171717] rounded-xl p-1 border border-[#DDAA52]/20">
+            {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setEventFilter(f)}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${
+                  eventFilter === f
+                    ? 'bg-gradient-to-r from-[#FB8B24] to-[#DDAA52] text-black'
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                {f} {f !== 'all' && `(${events.filter(e => e.status === f).length})`}
+              </button>
+            ))}
+          </div>
+          {events.filter(e => eventFilter === 'all' || e.status === eventFilter).map((event) => (
             <div key={event.id} className="bg-[#171717] rounded-2xl border border-[#DDAA52]/30 p-4">
               <div className="flex flex-col gap-3">
                 <div>
@@ -546,12 +562,12 @@ export default function AdminDashboard() {
                           {selectedEvent.location.latitude.toFixed(6)}, {selectedEvent.location.longitude.toFixed(6)}
                         </p>
                         <div className="mt-2 rounded-lg overflow-hidden border border-[#DDAA52]/20" style={{height:'180px'}}>
-                          <iframe
-                            title="Event Map"
+                          <img
+                            alt="Event Map"
                             width="100%"
-                            height="180"
-                            style={{border:0}}
-                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedEvent.location.longitude-0.01},${selectedEvent.location.latitude-0.01},${selectedEvent.location.longitude+0.01},${selectedEvent.location.latitude+0.01}&layer=mapnik&marker=${selectedEvent.location.latitude},${selectedEvent.location.longitude}`}
+                            style={{display:'block', width:'100%', height:180, objectFit:'cover', cursor:'pointer'}}
+                            src={`${import.meta.env.VITE_API_URL}/api/map/static?lat=${selectedEvent.location.latitude}&lng=${selectedEvent.location.longitude}&height=180`}
+                            onClick={() => window.open(`https://www.google.com/maps?q=${selectedEvent.location!.latitude},${selectedEvent.location!.longitude}`, '_blank')}
                           />
                         </div>
                       </div>

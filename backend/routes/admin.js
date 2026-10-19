@@ -37,19 +37,45 @@ const adminAuth = (req, res, next) => {
   }
 };
 
+// Get all events (admin)
+router.get('/events', adminAuth, async (req, res) => {
+  try {
+    const supabase = req.app.get('supabase');
+
+    let { data: events, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    if (events && events.length > 0) {
+      for (let event of events) {
+        const { data: userArray } = await supabase
+          .from('users')
+          .select('first_name, last_name, email')
+          .eq('id', event.creator_id);
+        event.users = userArray && userArray.length > 0 ? userArray[0] : null;
+      }
+    }
+
+    res.json(events || []);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Get pending events
 router.get('/events/pending', adminAuth, async (req, res) => {
   try {
     const supabase = req.app.get('supabase');
     
-    // First try with join, fallback to simple query
     let { data: events, error } = await supabase
       .from('events')
       .select('*')
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
 
-    // If no events found, check for events without status (newly created)
     if (!events || events.length === 0) {
       const { data: newEvents } = await supabase
         .from('events')
@@ -59,7 +85,6 @@ router.get('/events/pending', adminAuth, async (req, res) => {
       events = newEvents || [];
     }
 
-    // Get user details for each event
     if (events && events.length > 0) {
       for (let event of events) {
         const { data: userArray } = await supabase
