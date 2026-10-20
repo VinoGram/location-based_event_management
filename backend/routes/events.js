@@ -13,10 +13,11 @@ const upload = multer({ memory: true, limits: { fileSize: 10 * 1024 * 1024 } });
 // Create event
 router.post('/create', auth, upload.single('flyer'), async (req, res) => {
   try {
-    const { title, description, category, date, time, location } = req.body;
+    const { title, description, category, date, time, location, hasTickets, ticketTypes: ticketTypesRaw } = req.body;
     const supabase = req.app.get('supabase');
     
     const locationData = typeof location === 'string' ? JSON.parse(location) : location;
+    const ticketTypes = typeof ticketTypesRaw === 'string' ? JSON.parse(ticketTypesRaw) : ticketTypesRaw;
     
     let flyerUrl = null;
     
@@ -72,7 +73,10 @@ router.post('/create', auth, upload.single('flyer'), async (req, res) => {
         longitude: locationData?.longitude || null,
         creator_id: req.user.id,
         status: eventStatus,
-        flyer_url: flyerUrl
+        flyer_url: flyerUrl,
+        has_tickets: hasTickets === 'true' || hasTickets === true,
+        ticket_ussd: ticketTypes?.ussdCode || null,
+        ticket_web: ticketTypes?.webLink || null
       })
       .select()
       .single();
@@ -163,7 +167,7 @@ router.get('/nearby', async (req, res) => {
 
     let query = supabase
       .from('events')
-      .select(`*, users!creator_id(first_name,last_name), event_comments(id,comment,created_at,users!user_id(first_name,last_name,profile_picture))`)
+      .select(`id, title, description, category, date, time, location_name, location_address, latitude, longitude, creator_id, status, created_at, price, flyer_url, is_exclusive, rating, has_tickets, ticket_ussd, ticket_web, users!creator_id(first_name,last_name), event_comments(id,comment,created_at,users!user_id(first_name,last_name,profile_picture))`)
       .eq('status', 'approved')
       .gte('latitude', minLat).lte('latitude', maxLat)
       .gte('longitude', minLng).lte('longitude', maxLng);
@@ -259,6 +263,11 @@ router.get('/nearby', async (req, res) => {
         ...event,
         isOwner,
         creatorName: `${event.users?.first_name || ''} ${event.users?.last_name || ''}`.trim() || 'Unknown',
+        hasTickets: event.has_tickets || false,
+        ticketTypes: {
+          ussdCode: event.ticket_ussd || null,
+          webLink: event.ticket_web || null
+        },
         analytics: {
           views,
           rsvps,
@@ -365,7 +374,8 @@ router.get('/user/saved', auth, async (req, res) => {
       `SELECT e.id, e.title, e.description, e.category, e.date, e.time,
               e.location_name, e.location_address, e.flyer_url,
               e.creator_id, e.status, e.created_at, e.price,
-              e.latitude, e.longitude
+              e.latitude, e.longitude,
+              e.has_tickets, e.ticket_ussd, e.ticket_web
        FROM saved_events se
        JOIN events e ON e.id = se.event_id
        WHERE se.user_id = $1
@@ -373,7 +383,11 @@ router.get('/user/saved', auth, async (req, res) => {
       [req.user.id]
     );
 
-    res.json(rows);
+    res.json(rows.map(e => ({
+      ...e,
+      hasTickets: e.has_tickets || false,
+      ticketTypes: { ussdCode: e.ticket_ussd || null, webLink: e.ticket_web || null }
+    })));
   } catch (error) {
     console.error('Saved events error:', error);
     res.json([]);
