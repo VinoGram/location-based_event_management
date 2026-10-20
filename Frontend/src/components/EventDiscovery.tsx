@@ -1612,7 +1612,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
             <svg className="w-4 h-4 mr-3" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
             </svg>
-            <span>{new Date(event.date).toLocaleDateString()} at {event.time}</span>
+            <span>{new Date(event.date.replace(/-/g, '/')).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })} at {event.time}</span>
           </div>
           
           <div className="flex items-center text-white/80">
@@ -1800,7 +1800,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-white/90 text-sm font-medium truncate">{similar.title}</p>
-                      <p className="text-white/60 text-xs">{new Date(similar.date).toLocaleDateString()}</p>
+                      <p className="text-white/60 text-xs">{new Date(similar.date.replace(/-/g, '/')).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                     </div>
                   </div>
                 ))}
