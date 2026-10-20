@@ -165,30 +165,42 @@ router.get('/nearby', async (req, res) => {
     const minLat = lat - latDelta, maxLat = lat + latDelta;
     const minLng = lng - lngDelta, maxLng = lng + lngDelta;
 
-    let query = supabase
-      .from('events')
-      .select(`id, title, description, category, date, time, location_name, location_address, latitude, longitude, creator_id, status, created_at, price, flyer_url, is_exclusive, rating, has_tickets, ticket_ussd, ticket_web, users!creator_id(first_name,last_name), event_comments(id,comment,created_at,users!user_id(first_name,last_name,profile_picture))`)
-      .eq('status', 'approved')
-      .gte('latitude', minLat).lte('latitude', maxLat)
-      .gte('longitude', minLng).lte('longitude', maxLng);
+    const { pool } = require('../db');
 
-    if (category) query = query.in('category', category.split(','));
-    if (resolvedDateFrom) query = query.gte('date', resolvedDateFrom);
-    if (resolvedDateTo)   query = query.lte('date', resolvedDateTo);
+    let sqlWhere = `e.status = 'approved' AND e.latitude BETWEEN $3 AND $4 AND e.longitude BETWEEN $5 AND $6`;
+    const sqlParams = [lat, lng, minLat, maxLat, minLng, maxLng];
+    let paramIdx = 7;
 
-    // Price category filter
-    if (priceCategory) {
-      const cats = priceCategory.split(',');
-      // We'll filter in JS after fetch since price ranges depend on currency
-      // but we can do a quick free/paid split in SQL
-      if (cats.includes('free') && cats.length === 1) {
-        query = query.eq('price', 0);
-      } else if (!cats.includes('free') && cats.every(c => c.startsWith('under') || c.startsWith('over'))) {
-        query = query.gt('price', 0);
-      }
+    if (category) {
+      const cats = category.split(',');
+      sqlWhere += ` AND e.category = ANY($${paramIdx})`;
+      sqlParams.push(cats);
+      paramIdx++;
+    }
+    if (resolvedDateFrom) {
+      sqlWhere += ` AND e.date >= $${paramIdx}`;
+      sqlParams.push(resolvedDateFrom);
+      paramIdx++;
+    }
+    if (resolvedDateTo) {
+      sqlWhere += ` AND e.date <= $${paramIdx}`;
+      sqlParams.push(resolvedDateTo);
+      paramIdx++;
     }
 
-    const { data: rawEvents, error } = await query.limit(500);
+    const sqlQuery = `
+      SELECT e.id, e.title, e.description, e.category, e.date, e.time,
+             e.location_name, e.location_address, e.latitude, e.longitude,
+             e.creator_id, e.status, e.created_at, e.price, e.flyer_url,
+             e.is_exclusive, e.rating, e.has_tickets, e.ticket_ussd, e.ticket_web,
+             u.first_name, u.last_name
+      FROM events e
+      LEFT JOIN users u ON u.id = e.creator_id
+      WHERE ${sqlWhere}
+      LIMIT 500`;
+
+    const { rows: rawEvents, error: dbError } = await pool.query(sqlQuery, sqlParams).then(r => ({ rows: r.rows, error: null })).catch(e => ({ rows: [], error: e }));
+    const error = dbError;
 
     // ── Exact Haversine distance filter ─────────────────────────────────────
     const toRad = d => d * Math.PI / 180;
@@ -262,7 +274,7 @@ router.get('/nearby', async (req, res) => {
       return {
         ...event,
         isOwner,
-        creatorName: `${event.users?.first_name || ''} ${event.users?.last_name || ''}`.trim() || 'Unknown',
+        creatorName: `${event.first_name || ''} ${event.last_name || ''}`.trim() || 'Unknown',
         hasTickets: event.has_tickets || false,
         ticketTypes: {
           ussdCode: event.ticket_ussd || null,
@@ -276,12 +288,8 @@ router.get('/nearby', async (req, res) => {
           reach: views + rsvps * 3,
           shares: 0
         },
-        comments: (event.event_comments || []).map(comment => ({
-          user: `${comment.users?.first_name || 'User'} ${comment.users?.last_name || ''}`.trim(),
-          text: comment.comment,
-          date: comment.created_at,
-          avatar: comment.users?.profile_picture
-        }))
+        users: { first_name: event.first_name || null, last_name: event.last_name || null },
+        comments: [],
       };
     });
 

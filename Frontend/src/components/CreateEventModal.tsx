@@ -16,7 +16,9 @@ export default function CreateEventModal({ onClose, onEventCreated }: CreateEven
     time: '',
     location: '',
     price: '',
-    hasTickets: false
+    hasTickets: false,
+    ussdCode: '',
+    webLink: ''
   });
   const [locationData, setLocationData] = useState<{name: string, address: string, latitude: number, longitude: number} | null>(null);
   const [locationSuggestions, setLocationSuggestions] = useState<any[]>([]);
@@ -177,7 +179,8 @@ export default function CreateEventModal({ onClose, onEventCreated }: CreateEven
         body: JSON.stringify({
           ...formData,
           location: locationData || { name: formData.location, address: formData.location, latitude: 0, longitude: 0 },
-          price: formData.hasTickets ? parseFloat(formData.price) || 0 : 0
+          price: formData.hasTickets ? parseFloat(formData.price) || 0 : 0,
+          ticketTypes: JSON.stringify({ ussdCode: formData.ussdCode || null, webLink: formData.webLink || null })
         })
       });
 
@@ -379,17 +382,39 @@ export default function CreateEventModal({ onClose, onEventCreated }: CreateEven
               </label>
 
               {formData.hasTickets && (
-                <div>
-                  <label className="block text-[#FFFFFF] text-sm font-medium mb-2">Ticket Price ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
-                    className="w-full px-4 py-3 bg-[#171717] border border-[#DDAA52]/30 rounded-xl text-[#FFFFFF] placeholder-[#FFFFFF]/50 focus:outline-none focus:ring-2 focus:ring-[#FB8B24]"
-                    placeholder="0.00"
-                  />
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[#FFFFFF] text-sm font-medium mb-2">Ticket Price ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.price}
+                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                      className="w-full px-4 py-3 bg-[#171717] border border-[#DDAA52]/30 rounded-xl text-[#FFFFFF] placeholder-[#FFFFFF]/50 focus:outline-none focus:ring-2 focus:ring-[#FB8B24]"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#FFFFFF] text-sm font-medium mb-2">USSD Dial Code <span className="text-white/40 font-normal">(e.g. *712*1234#)</span></label>
+                    <input
+                      type="text"
+                      value={formData.ussdCode}
+                      onChange={(e) => setFormData({...formData, ussdCode: e.target.value})}
+                      className="w-full px-4 py-3 bg-[#171717] border border-[#DDAA52]/30 rounded-xl text-[#FFFFFF] placeholder-[#FFFFFF]/50 focus:outline-none focus:ring-2 focus:ring-[#FB8B24]"
+                      placeholder="*712*1234#"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#FFFFFF] text-sm font-medium mb-2">Ticket Website <span className="text-white/40 font-normal">(optional)</span></label>
+                    <input
+                      type="url"
+                      value={formData.webLink}
+                      onChange={(e) => setFormData({...formData, webLink: e.target.value})}
+                      className="w-full px-4 py-3 bg-[#171717] border border-[#DDAA52]/30 rounded-xl text-[#FFFFFF] placeholder-[#FFFFFF]/50 focus:outline-none focus:ring-2 focus:ring-[#FB8B24]"
+                      placeholder="https://tickets.example.com"
+                    />
+                  </div>
                 </div>
               )}
             </div>
