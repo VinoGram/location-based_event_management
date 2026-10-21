@@ -118,7 +118,7 @@ export default function EventDiscovery({ userLocation, currency, deepLinkEventId
   const [userCurrency, setUserCurrency] = useState('USD');
   const [showOriginalPrice, setShowOriginalPrice] = useState(false);
   
-  const [deepLinkedEvent, setDeepLinkedEvent] = useState<Event | null>(null);
+  const [deepLinkedEvent, setDeepLinkedEvent] = useState<AppEvent | null>(null);
   const deepLinkRef = useRef<HTMLDivElement>(null);
 
   // Fetch and highlight the deep-linked event
@@ -1074,6 +1074,16 @@ export default function EventDiscovery({ userLocation, currency, deepLinkEventId
   );
 }
 
+function formatEventDateTime(date: string, time: string): string {
+  const d = new Date(date.includes('T') ? date : date + 'T00:00:00');
+  const dateStr = isNaN(d.getTime()) ? date : d.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+  if (!time) return dateStr;
+  const [h, m] = time.split(':').map(Number);
+  if (isNaN(h)) return `${dateStr} at ${time}`;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return `${dateStr} at ${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
 function CommentAvatar({ url, name }: { url?: string | null; name: string }) {
   return <UserAvatar src={url} name={name} size={24} radius={6} />;
 }
@@ -1287,7 +1297,6 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
     if (!token) return;
 
     try {
-      console.log('Sharing event:', { groupId, eventId: event._id || event.id });
       const response = await fetch(`${API_URL}/api/groups/${groupId}/share-event`, {
         method: 'POST',
         headers: {
@@ -1298,17 +1307,13 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
       });
 
       const data = await response.json();
-      console.log('Share response:', data);
-
       if (response.ok) {
         toast.success('Event shared to group!');
         setShowGroupOptions(false);
       } else {
-        console.error('Share failed:', data);
         toast.error(data.message || 'Failed to share event');
       }
     } catch (error) {
-      console.error('Share error:', error);
       toast.error('Failed to share event');
     }
   };
@@ -1398,10 +1403,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
             src={event.flyerUrl || event.flyer_url}
             alt={event.title}
             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              console.log('Image failed to load:', event.flyerUrl || event.flyer_url);
-              // Don't hide the image, let it show broken image icon
-            }}
+            onError={() => {}}
           />
           <button
             onClick={async () => {
@@ -1612,7 +1614,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
             <svg className="w-4 h-4 mr-3" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
             </svg>
-            <span>{(() => { const d = new Date(event.date); const dateStr = isNaN(d.getTime()) ? event.date : new Date(event.date.includes('T') ? event.date : event.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }); const timeStr = (() => { if (!event.time) return ''; const [h, m] = event.time.split(':').map(Number); if (isNaN(h)) return event.time; const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; return `${h12}:${String(m).padStart(2,'0')} ${ampm}`; })(); return `${dateStr} at ${timeStr}`; })()}</span>
+            <span>{formatEventDateTime(event.date, event.time)}</span>
           </div>
           
           <div className="flex items-center text-white/80">
@@ -1800,7 +1802,7 @@ function PremiumEventCard({ event, onRSVP, onRate, onComment, currency, userCurr
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-white/90 text-sm font-medium truncate">{similar.title}</p>
-                      <p className="text-white/60 text-xs">{new Date(similar.date.includes('T') ? similar.date : similar.date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                      <p className="text-white/60 text-xs">{formatEventDateTime(similar.date, similar.time)}</p>
                     </div>
                   </div>
                 ))}
