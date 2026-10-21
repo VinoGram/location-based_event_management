@@ -167,7 +167,7 @@ router.get('/nearby', async (req, res) => {
 
     const { pool } = require('../db');
 
-    let sqlWhere = `e.status = 'approved' AND e.latitude BETWEEN $3 AND $4 AND e.longitude BETWEEN $5 AND $6`;
+    let sqlWhere = `e.status = 'approved' AND (e.latitude IS NULL OR e.longitude IS NULL OR (e.latitude BETWEEN $3 AND $4 AND e.longitude BETWEEN $5 AND $6))`;
     const sqlParams = [lat, lng, minLat, maxLat, minLng, maxLng];
     let paramIdx = 7;
 
@@ -200,7 +200,11 @@ router.get('/nearby', async (req, res) => {
       LIMIT 500`;
 
     const { rows: rawEvents, error: dbError } = await pool.query(sqlQuery, sqlParams).then(r => ({ rows: r.rows, error: null })).catch(e => ({ rows: [], error: e }));
-    const error = dbError;
+
+    if (dbError) {
+      console.error('Events query error:', dbError);
+      return res.json([]);
+    }
 
     // ── Exact Haversine distance filter ─────────────────────────────────────
     const toRad = d => d * Math.PI / 180;
@@ -246,11 +250,6 @@ router.get('/nearby', async (req, res) => {
       events = events.filter(e => (parseFloat(e.price) || 0) >= priceMin);
     if (!isNaN(priceMax) && priceMax < 1000)
       events = events.filter(e => (parseFloat(e.price) || 0) <= priceMax);
-
-    if (error) {
-      console.error('Events query error:', error);
-      return res.json([]);
-    }
 
     // Fetch real counts for all events
     const eventIds = (events || []).map(e => e.id);
