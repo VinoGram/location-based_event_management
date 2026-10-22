@@ -117,9 +117,27 @@ export default function EventDiscovery({ userLocation, currency, deepLinkEventId
   const [activeFilter, setActiveFilter] = useState<'date' | 'price' | 'category' | 'sort' | 'radius' | null>(null);
   const [userCurrency, setUserCurrency] = useState('USD');
   const [showOriginalPrice, setShowOriginalPrice] = useState(false);
+  const [locationName, setLocationName] = useState<string>('');
+  const [locationLoading, setLocationLoading] = useState(false);
   
   const [deepLinkedEvent, setDeepLinkedEvent] = useState<AppEvent | null>(null);
   const deepLinkRef = useRef<HTMLDivElement>(null);
+
+  // Reverse-geocode whenever userLocation changes
+  useEffect(() => {
+    if (!userLocation) return;
+    setLocationLoading(true);
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.latitude}&lon=${userLocation.longitude}&zoom=10`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.address) {
+          const a = data.address;
+          setLocationName(a.city || a.town || a.village || a.county || a.state || 'Your location');
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLocationLoading(false));
+  }, [userLocation]);
 
   // Fetch and highlight the deep-linked event
   useEffect(() => {
@@ -654,13 +672,24 @@ export default function EventDiscovery({ userLocation, currency, deepLinkEventId
 
   return (
     <div style={{ background: '#0a0a0a', minHeight: '100vh', width: '100%', paddingBottom: 80 }}>
-      {/* Search bar */}
+      {/* Search bar + location */}
       <div style={{ background: 'rgba(10,10,10,0.97)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '10px 12px', position: 'sticky', top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <SmartSearchBar onSearch={handleSearch} placeholder="Search events, artists, venues..." />
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <SmartSearchBar onSearch={handleSearch} placeholder="Search events, artists, venues..." />
+            </div>
           </div>
-
+          {/* Location pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <svg width="12" height="12" fill="#FB8B24" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+            <span style={{ color: locationLoading ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.6)', fontSize: 12 }}>
+              {locationLoading ? 'Detecting location...' : locationName || (userLocation ? `${userLocation.latitude.toFixed(3)}, ${userLocation.longitude.toFixed(3)}` : 'No location')}
+            </span>
+            {userLocation && (
+              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11 }}>· {filters.radius} km radius</span>
+            )}
+          </div>
         </div>
       </div>
 
